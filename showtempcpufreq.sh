@@ -136,43 +136,12 @@ cat > $contentforpvejs << 'EOF'
 		title: gettext('温度(°C)'),
 		textField: 'thermalstate',
 		renderer:function(value){
-			//value进来的值是有换行符的
-			
-			let b = value.trim().split(/\s+(?=^\w+-)/m).sort();
-			let c = b.map(function (v){
-				let name = v.match(/^[^-]+/)[0].toUpperCase();
-				
-				let temp = v.match(/(?<=:\s+[+-]?)\d+/g);
-				// 某些没有数据的传感器
-				if ( ! temp ) {
-					
-					return 'null'
-				}
-				
-				if (/coretemp/i.test(name)) {
-					name = 'CPU';
-					temp = temp[0] + ' ( ' +   temp.slice(1).join(' | ') + ' )';
-				} else {
-					temp = temp[0];
-				}
-				
-				let crit = v.match(/(?<=\bcrit\b[^+]+\+)\d+/);
-				
-				
-				return name + ': ' + temp + ( crit? ` ,crit: ${crit[0]}` : '');
-			});
-			// 排除null值的
-			c=c.filter( v => ! /^null$/.test(v) )
-			//console.log(c);
-			//排序，把cpu温度放最前
-			let cpuIdx = c.findIndex(v => /CPU/i.test(v) );
-			if (cpuIdx > 0) {
-				c.unshift(c.splice(cpuIdx, 1)[0]);
-			}
-			
-			console.log(c)
-			c = c.join(' | ');
-			return c;
+		const p0 = value.match(/Package id 0.*?\+([\d\.]+)Â/)[1];
+		const b0 = value.match(/temp1.*?\+([\d\.]+)?/)[1];
+		const fan2 = value.match(/fan2.*?([\d]+)/)[1];
+		const fan3 = value.match(/fan3.*?([\d]+)/)[1];
+		const fan5 = value.match(/fan5.*?([\d]+)/)[1];
+		return `CPU:${p0}℃ || 主板: ${b0}℃ || FAN  cpu:${fan2}  hdd:${fan3}  sys:${fan5} `
 		 }
 	},
 	{
@@ -192,7 +161,7 @@ cat > $contentforpvejs << 'EOF'
 			let max = (v.match(/(?<=max:)\d+/i)[0]/1000000).toFixed(1);
 			let watt= v.match(/(?<=pkgwatt:)[\d.]+/i);
 			watt = watt? " | 功耗: " + (watt[0]/1).toFixed(1) + 'W' : '';
-			return `${m2} | MAX: ${max} | MIN: ${min}${watt} | 调速器: ${gov}`
+			return `${m2} | MAX: ${max} | MIN: ${min}${watt}`
 		 }
 	},
 EOF
